@@ -1,0 +1,419 @@
+#!/bin/bash
+
+JOBNAME="file"
+
+#//////////////// Defining default variables/////////////////////
+
+#Default que
+qname="diskq"
+QNAME=$qname
+#maxtime is 15 days!
+maxtime=15-00:00:00
+MAXTIME=$maxtime
+#default memory is 16 GB
+defm=16000
+MEM=$defm
+#defalut tasks per node
+tpn=2
+TPN=$tpn
+# By Default the current directory will be chosen for input and output
+OUTPUTDIR=`pwd`
+INPUTDIR=`pwd`
+SUBMIT=0
+USER1=$(logname) #default e-mail address
+#///////////////////////////////////////////end /////////////////////////////////
+
+# Accessing the partition information of the cluster!
+#////////////////////////////////////////////////////////////////////////////
+#***************************************************************************
+scontrol show partition > info.txt
+#q_variables
+x="1 2 3 4 5 6"
+id=0;
+for j in $x;
+        do
+        n[id]=$( cat info.txt |awk '/PartitionName/{i++}i=='$j'' | grep PartitionName | cut -d '=' -f 2);
+        T[id]=$( cat info.txt |awk '/PartitionName/{i++}i=='$j''| grep MaxTime | cut -d '=' -f 3 | cut -d ' ' -f 1  )
+        M[id]=$( cat info.txt |awk '/PartitionName/{i++}i=='$j''|grep Nodes| awk '/Nodes/{i++}i==3' | cut -d '=' -f 2  )
+        CPUN[id]=$( cat info.txt |awk '/PartitionName/{i++}i=='$j''|grep CPU | awk '/Nodes/{i++}i==2' | cut -d '=' -f 3|cut -d ' ' -f 1 )
+        N[id]=$( cat info.txt |awk '/PartitionName/{i++}i=='$j''|grep TotalNodes | cut -d '=' -f 4| cut -d ' ' -f 1)
+        id=$((id+1))
+done
+rm info.txt
+node=${N[3]}
+
+# quotes
+quotes[0]="As far as the laws of mathematics refer to reality,they are not certain,\n and as far as they are certain, they do not refer to reality \n-A.Einstien \n"
+quotes[1]="In theory, there is no difference between theory and practice.\n But, in practice, there is \n -A.Einstien \n "
+
+quotes[2]="Every attempt to employ mathematical methods in the study of chemical questions\n must be considered profoundly irrational and contrary to the spirit of chemistry. \n If mathematical analysis should ever hold a prominent place in chemistry \n- an aberration which is happily almost impossible - \nit would occasion a rapid and widespread degeneration of that science\n -A.Comte \n "
+quotes[3]="If we knew what we were doing, it wouldn't be called research \n -A Einstien"
+quotes[4]="Common sense is the collection of prejudices acquired by age eighteen \n - Albert Einstein"
+quotes[5]="Anyone who is not shocked by quantum theory has not understood a single word.  \n Niels Bohr"
+quotes[6]="It takes so long to train a physicist to the place where he understands \nthe nature of physical problems that he is already too old to solve them\nEugene Wigner"
+quotes[7]="It takes so long to train a quantum chemist to the place where she understands the nature of chemical problems\n that she has already invested so much in a specific software package\n that it is easiest just to ignore them and proceed\n -Seth Olsen "
+quotes[8]="I like pigs. Dogs look up to us. Cats look down. But Pigs treat us as Equals. \n Winston Churchill."
+quotes[9]="I am not rich enough to buy cheap things \n saying from Britain"
+
+#End of definitions
+#********************************************************************************
+#///////////////////////////////////////////////////////////////////////////////
+
+
+
+usage () {
+use="submit [options] \n
+     To run the command with default variables use, ./submit file.inp \n
+or, to use a particular que, use ./submit file.inp qname options \n 
+To know more about the available options, type ./submit help \n"
+
+echo -en  $use
+}
+default_var () {
+deftext=" Default variables will be used :- \n
+          qname=\t$qname \n
+          mem=\t$defm MB\n
+          tasks/node=\t 2 \n
+          Outputdir=\t $OUTPUTDIR \n
+          maxtime=\t $maxtime \n
+          USER=\t s.rathnachalam@rug.nl(siva)\n
+          commands=\t quantics -mnd file \n
+         \t           quantics -pes file \n
+          Please note: The default values can be overridden with optional keywords.\n
+          Type .\submit help for more details\n
+          Have fun! \n"
+echo -en $deftext 
+}
+# To print some random quotes
+prandq () {
+rand=$[ $RANDOM % 9 ]
+echo " **********************************************************************************"
+echo -e ${quotes[$rand]}
+echo "************************************************************************************"
+}
+# To print the qinfo
+q_info () {
+table=" \
+  --------------------------------------------------------------\n 
+  Que\t  ||\t MaxTime\t ||\t Memory\t ||\t MaxNodes\t || \n
+  -------------------------------------------------------------\n
+  ${n[0]} ||\t ${T[0]}\t ||\t ${M[0]}\t ||\t ${N[0]}\t || \n
+  ${n[1]} ||\t ${T[1]}\t ||\t ${M[1]}\t ||\t ${N[1]}\t || \n
+  ${n[2]} ||\t ${T[2]}\t ||\t ${M[2]}\t ||\t ${N[2]}\t || \n
+  ${n[3]} ||\t ${T[3]}\t ||\t ${M[3]}\t ||\t ${N[3]}\t || \n
+  ${n[4]} ||\t ${T[4]}\t ||\t ${M[4]}\t ||\t ${N[4]}\t || \n
+  ${n[5]} ||\t ${T[5]}\t ||\t ${M[5]}\t ||\t ${N[5]}\t || \n
+  "
+echo -en $table | column  -t
+}
+
+# To print help
+
+print_help () {
+HELP="\
+      help\t prints help text\n
+      qinfo\t prints Que info \n
+       default\t   print default variables\n
+       n\t no.of nodes\n
+       m\t override default memory with given memory (in MB)\n
+       t\t override default-wall clock time (in days-hr:min:ss format)\n
+       T\t change the default ntasks/node\n
+       u\t --specify user name (rug email about the job status sent here)\n
+       i\t --Specify explicit input directory\n
+      o\t --explicit output directory\n
+      s\t --create the job file only (will not submit the file)\n"
+     echo -en "$HELP"
+}
+
+#ake ComMands file
+#echo "quantics -mnd $JOBNAMiE">ComMands
+#echo"quantics -pes $JOBNAME">>ComMands
+call_steno () {
+Jobn=$JOBNAME
+echo "#!/bin/bash" >${Jobn}.sh
+echo " #SBATCH -p $QNAME
+#SBATCH -N $node1 
+#SBATCH --mem=1600
+#SBATCH --ntasks-per-node=1
+#SBATCH --time=00:00:30 
+#SBATCH --mail-user=$USER1
+#SBATCH --mail-type=ALL
+#SBATCH -o $JOBNAME.o%j
+cd \$TMPDIR
+mkdir $JOBNAME 
+cd $JOBNAME 
+#cp $INPUTDIR/$INPUT $JOBNAME/ ">>${Jobn}.sh
+#commands1=$(<ComMands)
+#$commands1 >>${Jobn}.sh
+echo "cp $INPUTDIR/$JOBNAME.inp .">>${Jobn}.sh 
+echo "quantics -mnd $JOBNAME.inp">>${Jobn}.sh
+echo "#mctdh84 -pes $JOBNAME.inp">>${Jobn}.sh
+echo "cp -r $JOBNAME $OUTPUTDIR">>${Jobn}.sh
+}
+#Delete this-1
+node1=$node; MEM1=$MEM ; MAXTIME1=$MAXTIME;
+
+#Print Qerror if the variable chosen doesnt fit to the requested partition
+qerr () {
+qerror="The variables entered are exceeding the allowed parameters in the $QNAME que \n
+        for more details, use qinfo command. ./submitjob qinfo \n "
+echo -en "$qerror"
+
+}
+# Acknowledge the user about the updated variable
+happy_note () {
+happynote="I have taken the default parameters associated with the $QNAME. \n
+To override the node -n and to override mem -m. Type, ./submit help , for more detailed usage of options !\n"
+echo -en ""$happynote""
+}
+
+
+
+# ///////////////////////end of functions/////////////////////////////////////////////
+
+#If the number of arguments are less than 1
+
+
+if [ $# -lt 1 ]; then
+   echo 'Warning: Not enough arguments.'
+    usage
+    prandq
+   exit
+fi
+
+
+
+#If the number if argument is just one!
+if [ $# -eq 1  ]; then
+        opt=$1
+        if [[ $opt == *.inp ]]; then
+                if [ -f $INPUTDIR/$opt ]; then
+                   INPUT=$opt
+                   JOBNAME=$(basename "$opt" .inp)
+                   echo " The job name is $JOBNAME"
+                          node1=$node
+			   MEM1=$MEM
+                          MAXTIME1=$MAXTIME
+                          echo $JOBNAME
+                          SUBMIT=1
+                          echo "The job will be submited in the $QNAME"
+                         prandq
+                 else
+                    echo "The file doesnt exist in $INPUTDIR .  please run from the directory of your input file"
+                           prandq
+                           exit
+                  fi
+        else
+                case $opt in
+                qinfo) #qinfo 
+                       q_info;;
+                default) #default_variables
+                        default_var;;
+                 help)
+                       print_help;;
+                    *)
+                       echo "unrecogonized command"
+                       print_help
+                        prandq;;
+                   esac
+                fi
+ fi
+
+# if the input has more than one argument.. 
+
+# The first argument should be file.inp and the second argument should be qname , followed by optional arguments!
+
+if [ $# -ge 2 ] ; then
+        input=$1
+        echo $input
+        if [[ $input == *.inp ]]; then
+                if [ -f "$INPUTDIR"/"$input" ]; then
+                   INPUT=$input
+                   JOBNAME=$(basename "$input" .inp)
+                   echo " The job-file named is $JOBNAME.sh is created"
+                 else
+                    echo " The file doesn't exist in $INPUTDIR ! please run from the directory of your input file."
+                           break
+                           exit 1
+                 fi
+        fi
+
+        shift 1
+         case $1 in
+                       defq)
+                                echo " default que is chosen , the maxtime is ${T[0]} (maxtime will be set unless specified) and memory available is ${M[0]}"
+                                echo " Available processors in the node are : ${CPUN[0]} default memory is $defm MB"
+                                QNAME="defq"
+				MAXTIME=${T[0]}
+                                MEM=$defm
+                                nodes=${N[0]}
+                                ntasks=2
+                                happy_note
+                                break;;
+                        gpuq) #gpuq
+                                echo " GPU que is chosen , the maxtime is ${T[1]} (default-time will be set unless specified) and memory available is ${M[1]}"
+                                echo " Available processors in the node are : ${CPUN[0]} default memory is $defm MB"
+                                echo " Be informed that to use this node Quantics should be GPU-compatible, Ethical issues!"
+                                QNAME="gpuq"
+				MAXTIME=$deft
+                                MEM=$defm
+                                nodes=${N[1]}
+                                ntasks=2
+                                happy_note
+                                break;;
+                        diskq) echo " Lowest processor que is chosen , the maxtime is ${T[2]} (default-time will be set unless specified) and memory available is ${M[2]}"
+                                echo " Available processors in the node are : ${CPUN[2]} default memory is $defm MB"
+                                MAXTIME=$deft
+                                MEM=$defm
+                                nodes=${N[2]}
+                                ntasks=2
+				QNAME="diskq"
+                                happy_note
+                                break;;
+                        memq)   QNAME="memq"
+                                echo " High memory que is chosen , the maxtime is ${T[3]} (default-time will be set unless specified) and memory available is ${M[3]}"
+                                echo " Available processors in the node are : ${CPUN[3]} default memory is $defm MB"
+                                MAXTIME=$deft
+                                MEM=$defm
+                                nodes=${N[3]}
+                                ntasks=2
+                                happy_note
+                                break;;
+                         shortq)QNAME="shortq"
+				echo " High memory que is chosen , the maxtime is ${T[4]} (default-time will be set unless specified) and memory available is ${M[4]}"
+                                echo " Available processors in the node are : ${CPUN[4]} default memory is $defm MB"
+                                MAXTIME=${T[4]}
+                                MEM=$defm
+                                nodes=${N[4]}
+                                ntasks=2
+                                happy_note
+                                break;;
+
+                         ultrashortq)QNAME="ultrashortq"
+                                echo " Ultrashort que is chosen , the maxtime is ${T[5]} (maxtime will be set unless specified) and memory available is ${M[5]}"
+                                echo " Available processors in the node are : ${CPUN[5]} default memory is $defm MB"
+                                MAXTIME=${T[5]}
+                                MEM=$defm
+                                nodes=${N[5]}
+                                ntasks=2
+                                happy_note
+                                break;;
+                        *)
+                                echo "Unrecogonizable que name"
+                                echo -en  $table | column  -t
+                                break;;
+                        esac
+                       shift
+
+              options=$1
+	      while getopts ":n:M:T:u:t:i:o:s:c:h:" options ; do
+                      case $options in
+				 n)  #no of nodes
+                                       nod=${OPTARG}
+                                       if [[ $nod -lt $nodes ]]; then
+                                       node1=$nod
+                                       echo " I have taken node , $node1 :) "
+                                       else
+                                       node1=$nodes
+                                       qerr
+                                        fi
+                                       ;;
+                                   M) #Memory required
+                                      mem=${OPTARG}
+                                      if [[ $mem -lt $defm ]]; then
+                                      MEM1=$mem
+                                      echo "Memory is updated as $mem" 
+                                      else
+                                        MEM1=$defm
+                                        qerr
+                                        echo "Retained the default memory"
+                                      fi
+                                      ;;
+                                    T)
+                                        nts=${OPTARG}
+                                        if [ $nts -eq 1 ]; then
+                                              ntask1=$nts
+                                              echo "ntasks/node is modified as $nts" 
+                                         else
+                                              ntask1=$ntasks
+                                              echo "ntasks per node can only be one or two while two is default" 
+                                         fi
+                                        ;;
+
+                                 u)
+                                    usr=${OPTARG}
+                                    mail="@rug.nl"
+                                    USER1=$usr$mail
+                                    echo "Gotcha, $usr ;)"
+                                    ;;
+                                  t)
+                                     maxt=${OPTARG}
+                                    # Days obtained from the user
+                                    newt=$(echo $maxt | cut -d '-' -f 1)
+				    # Default days from the MAXTIME
+                                    defd=$(echo $MAXTIME | cut -d '-' -f 1)
+                                    echo $newt
+                                    if [[ $newt -le $defd ]]; then
+                                          MAXTIME1=$maxt
+                                          echo "Wall-clock time adjusted to $maxt"
+				    else
+					  MAXTIME1=$MAXTIME
+                                          echo "The time given in days-hr:min:sec exceeded the MAXTIME permissible under the partition!"
+                                          qerr
+
+              	                    fi
+                                    ;;
+                                   i) inputdir=${OPTARG}
+                                      if [ -z "$inputdir" ]; then
+                                      	INPUTDIR=$inputdir
+                                        path=`pwd`
+					echo "Caution: Your current path is $path and the requested Working directory is $INPUTDIR "
+                                      else
+                                          INPUTDIR=`pwd`
+                                          exit
+                                      fi
+                                     ;;
+				o) outputdir=${OPTARG}
+                                      if [ -z "$outputdir" ]; then
+                                        OUTPUTDIR=$outputdir
+                                        path=`pwd`
+                                        echo "Caution: Your current path is $path and the requested output directory is $OUTPUTDIR "
+                                      else
+                                          OUTPUTDIR=`pwd`
+                                          exit
+                                      fi
+                                     ;;
+
+                                  s)
+                                      sub=${OPTARG}
+                                       if [ $sub -gt 0 ];  then
+                                            SUBMIT=1
+                                       else
+                                             SUBMIT=0
+                                        fi
+                                       ;;
+				   c)
+                                      comfile=${OPTARG}
+                                      mv $comfile ComMands
+                                      ;;
+                                     h|*)
+                              		echo "Unrecognized option" >&2
+                              		#Print help
+                                        print_help
+                                        exit
+                                        ;;
+                                     esac
+                         done
+                         shift $(( OPTIND - 1 ))
+fi
+if [[ $SUBMIT == 1 ]]; then
+	call_steno
+	echo "Job will be submitted in $QNAME"
+        sbatch ${Jobn}.sh 
+        prandq
+else
+	call_steno
+        echo " Warning ! The job file called ${Jobn}.sh is created and its not submitted"
+        prandq
+        exit
+fi
