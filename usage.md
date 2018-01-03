@@ -7,6 +7,19 @@
 2. Download the nocl0.inp in your path
 
 
+## Genral usage:
+It is expected that this script will evolve to better shape so please be careful to note the version of the script that you are using.
+
+Version of your script can be obtained simply 
+
+_submit\_quantics --v_ or _submit\_quantics -ver_
+
+_submit\_quantics help_ prints help
+
+_submit\_quantics qinfo_ prints que-information
+
+_submit\_quantics default_ reveals the default variables of the que
+
 
 ## Basic Usage
 
