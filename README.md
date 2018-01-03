@@ -4,14 +4,23 @@ This repository  hosts the information related to Quantics (A Quantum dynamics p
 This repository also hosts various scripts that can be used for the theoretical and computational chemistry research. All the scripts provided here are self-explanatory. Any issues regarding the code can be reported to [sivasudhan](mailto:s.rathnachalam@rug.nl)
 ### submit\_quantics
 This script submits the quantics job in the Nieuwpoort cluster of RUG.
+
+
 **It is highly recommended that you save the _submit\_quantics_ in your bin folder of the account as submit\_quantics**. Learn more about bin folder [here](https://askubuntu.com/questions/406491/how-to-create-and-link-a-bin-folder-to-contain-executables)
+
+
 ### Usage of the script
 Usage of the script is explained and it can be obtained 
 
-_To submit the file with default que variables:_
+_ To submit the file with default que variables: _
+
 **_submit\_quantics_** **file.inp** 
+
+
 **_Wondering what the default Que variables are? _**
 Type submit\_quantics default
+
+
 **_ Want to choose a different Que ? _**
 Type _submit\_quantics qinfo_ 
 
