@@ -14,28 +14,45 @@ Usage of the script is explained and it can be obtained
 
 _ To submit the file with default que variables: _
 
+
+To recieve help for using the script, type
+
+
+**submit\_quantics help or -h or ? **
+
+
 **_submit\_quantics_** **file.inp** 
 
 
-**_Wondering what the default Que variables are? _**
+**Wondering what the default Que variables are? **
+
+
 Type submit\_quantics default
 
 
-**_ Want to choose a different Que ? _**
-Type _submit\_quantics qinfo_ 
+**Want to choose a different Que ? **
+
+
+Type **submit\_quantics qinfo**
 
 You can also use the script with default variables of different ques available. This choice provides the user with the maximum wall-clock time allowed, memory, tasks per node etc for the particular que chosen!
 
+
 To exploit this one should use :
-_submit\_quantics file.inp qname_
+
+
+**submit\_quantics file.inp qname**
+
+
 
 To override the default variables of the que, one may use the optional variable which should be followed by the input file and qname . 
 
-_submit\_quantics file.inp qname **options**_
+**submit\_quantics file.inp qname options**
 
 The order of the arguments for input file and qname is important i.e, file.inp is always the first argument and qname is always the second argument. However, the following optional arguments can be given in any order.
 
-###Optional arguments are :
+
+###  Optional arguments are :
 -n for nodes
 -m for requesting memory
 -t for time (in hh:min:sec)
