@@ -1,0 +1,43 @@
+########################################################################
+###                  Relaxation on NOCl S0 surface                   ###
+########################################################################
+
+RUN-SECTION
+relaxation
+name = nocl0
+tfinal = 60.0  tout = 10.0
+psi  steps  gridpop
+end-run-section
+
+OPERATOR-SECTION
+opname = nocl0
+end-operator-section
+
+SBASIS-SECTION
+    rd    =  3
+    rv    =  3
+    theta =  3
+end-sbasis-section
+
+pbasis-section
+#Label    DVR     N     Parameter
+    rd    sin     36    3.800    5.600
+    rv    HO      24    2.136    0.272,ev    7.4667,AMU
+    theta Leg     60    0        all
+end-pbasis-section
+
+INTEGRATOR-SECTION
+ CMF/var =  0.50, 1.0d-5
+ BS/spf  =   8  , 1.0d-6
+ SIL/A   =  20  , 1.0d-6
+end-integrator-section
+
+INIT_WF-SECTION
+build
+ rd    gauss  4.315  0.0  0.0794
+ rv    HO     2.151  0.0  0.218,eV  13615.5
+ theta gauss  2.22   0.0  0.0745
+end-build
+end-init_wf-section
+
+end-input
