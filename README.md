@@ -9,16 +9,20 @@ This script submits the quantics job in the Nieuwpoort cluster of RUG.
 **It is highly recommended that you save the _submit\_quantics_ in your bin folder of the account as submit\_quantics**. Learn more about bin folder [here](https://askubuntu.com/questions/406491/how-to-create-and-link-a-bin-folder-to-contain-executables)
 
 
-### Usage of the script
+### Manual for understanding the functionality of the script
 Usage of the script is explained and it can be obtained 
 
-_ To submit the file with default que variables: _
-
-
-To recieve help for using the script, type
+ 
+ To recieve help for using the script, type
 
 
 **submit\_quantics help or -h or ? **
+ 
+ 
+ To submit the file with default que variables: 
+
+
+
 
 
 **_submit\_quantics_** **file.inp** 
